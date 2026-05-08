@@ -1,3 +1,8 @@
+test.css
+test.js
+.env
+water_quality.db
+
 # Python-generated files
 __pycache__/
 *.py[oc]
@@ -10,7 +15,6 @@ wheels/
 .venv
 .python-version
 uv.lock
-water_quality.db
 pyproject.toml
 myvenv/
 .env

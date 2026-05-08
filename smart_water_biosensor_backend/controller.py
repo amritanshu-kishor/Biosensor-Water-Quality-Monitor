@@ -1,17 +1,9 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from repo import WaterRepo
 from services import WaterService
 from helper import generate_sensor_data
 
 water_bp = Blueprint("water", __name__)
-
-
-# @water_bp.route("/generate", methods=["GET"])
-# def generate_data():
-#     data = generate_sensor_data()
-#     WaterRepo.insert_water_data(data)
-
-#     return jsonify({"message": "Random sensor data generated"})
 
 @water_bp.route("/generate", methods=["GET"])
 def generate_data():
@@ -28,16 +20,6 @@ def generate_data():
     WaterRepo.insert_water_data(data)
 
     return jsonify({"message": "Random sensor data generated"})
-
-# @water_bp.route("/report/basic", methods=["GET"])
-# def basic_report():
-#     data = WaterRepo.get_latest()
-
-#     if not data:
-#         return jsonify({"error": "No data available"}), 404
-
-#     result = WaterService.basic_report(data)
-#     return jsonify(result)
 
 @water_bp.route("/report/basic", methods=["GET"])
 def basic_report():
@@ -66,16 +48,6 @@ def basic_report():
 
     result = WaterService.basic_report(data)
     return jsonify(result)
-
-# @water_bp.route("/report/advanced", methods=["GET"])
-# def advanced_report():
-#     data = WaterRepo.get_latest()
-
-#     if not data:
-#         return jsonify({"error": "No data available"}), 404
-
-#     result = WaterService.advanced_report(data)
-#     return jsonify(result)
 
 @water_bp.route("/report/advanced", methods=["GET"])
 def advanced_report():
@@ -122,3 +94,43 @@ def latest():
         "water_level": water_level,
         "timestamp": created_at,
     })
+
+
+@water_bp.route("/trend", methods=["GET"])
+def trend():
+    """
+    Get Recent Sensor Trend Rows
+    ---
+    tags:
+      - Water Sensor
+    parameters:
+      - name: limit
+        in: query
+        type: integer
+        required: false
+        default: 30
+        description: Number of most recent rows to return (max 500)
+    responses:
+      200:
+        description: Recent sensor rows in chronological order
+    """
+    limit_raw = request.args.get("limit", default="30")
+    try:
+        limit = int(limit_raw)
+    except (TypeError, ValueError):
+        limit = 30
+
+    rows = WaterRepo.get_recent(limit)
+    payload = []
+    for ph, ri, tds, turbidity, water_level, created_at in rows:
+        payload.append(
+            {
+                "ph": ph,
+                "ri": ri,
+                "tds": tds,
+                "turbidity": turbidity,
+                "water_level": water_level,
+                "timestamp": created_at,
+            }
+        )
+    return jsonify({"points": payload, "count": len(payload)})
