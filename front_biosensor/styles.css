@@ -461,6 +461,7 @@ code{
   border: 1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.03);
   padding: 12px;
+  height: 220px;
 }
 .chart__head{
   display:flex;
@@ -474,6 +475,13 @@ code{
 .dot--a{background: var(--a)}
 .dot--b{background: var(--b)}
 .dot--c{background: var(--c)}
+
+.chart canvas{
+  display:block;
+  width: 100% !important;
+  height: 160px !important;
+  max-height: 160px;
+}
 
 .footer{
   margin-top: 16px;

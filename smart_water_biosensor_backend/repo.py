@@ -30,3 +30,24 @@ class WaterRepo:
         conn.close()
 
         return row
+
+    @staticmethod
+    def get_recent(limit=30):
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        safe_limit = max(1, min(int(limit), 500))
+        cursor.execute(
+            """
+            SELECT ph, ri, tds, turbidity, water_level, created_at
+            FROM water_data
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (safe_limit,),
+        )
+        rows = cursor.fetchall()
+        conn.close()
+
+        # Return in chronological order for plotting.
+        return list(reversed(rows))
