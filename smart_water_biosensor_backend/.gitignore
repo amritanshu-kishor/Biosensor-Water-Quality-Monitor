@@ -12,3 +12,4 @@ wheels/
 uv.lock
 water_quality.db
 pyproject.toml
+myvenv/
