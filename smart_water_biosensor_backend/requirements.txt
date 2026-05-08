@@ -2,3 +2,4 @@ flask
 flasgger
 pydantic
 uvicorn
+flask-cors

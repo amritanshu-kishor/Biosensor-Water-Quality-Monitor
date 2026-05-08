@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Water Quality Detector • Biosensor Index</title>
+    <meta
+      name="description"
+      content="Two-layer biosensor water quality detector: pre-analysis (PPI, RI) then advanced tests (TDS, pH, turbidity) with graphs and final drinkable verdict."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <div class="bg">
+      <div class="bg__grid"></div>
+      <div class="bg__glow bg__glow--a"></div>
+      <div class="bg__glow bg__glow--b"></div>
+    </div>
+
+    <header class="topbar">
+      <div class="container topbar__inner">
+        <div class="brand">
+          <div class="brand__mark" aria-hidden="true">
+            <span class="brand__drop"></span>
+            <span class="brand__ring"></span>
+          </div>
+          <div class="brand__text">
+            <div class="brand__title">Biosensor Water Quality</div>
+            <div class="brand__subtitle">2-layer detection • visual dashboard</div>
+          </div>
+        </div>
+
+        <nav class="nav" aria-label="Primary">
+          <a class="nav__link nav__link--active" href="./index.html">Dashboard</a>
+          <a class="nav__link" href="./about.html">About</a>
+        </nav>
+
+        <div class="topbar__actions">
+          <button class="btn btn--ghost" id="btnDemo" type="button">Use demo sample</button>
+          <button class="btn btn--ghost" id="btnRealtimeSample" type="button" title="Fetch sample from backend (/water/report/advanced)">
+            Use realtime sample
+          </button>
+          <button class="btn btn--primary" id="btnReset" type="button">Reset</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container main">
+      <section class="hero">
+        <div class="hero__left">
+          <div class="pill">
+            <span class="pill__dot" aria-hidden="true"></span>
+            <span>Realtime decisioning • Pre-analysis → Advanced layer</span>
+          </div>
+
+          <h1 class="hero__title">
+            Know if the water is <span class="hero__accent">drinkable</span>—fast.
+          </h1>
+
+          <p class="hero__copy">
+            Start with <b>Pre-analysis</b> (PPI + RI). If it passes, the system runs <b>Advanced tests</b>
+            (TDS, pH, Turbidity) and shows graphs plus a clear verdict.
+          </p>
+
+          <div class="stepper" role="list" aria-label="Two layer flow">
+            <div class="step step--active" id="stepPre" role="listitem">
+              <div class="step__badge" aria-hidden="true">1</div>
+              <div class="step__meta">
+                <div class="step__title">Pre-analysis layer</div>
+                <div class="step__desc">PPI + RI screening</div>
+              </div>
+            </div>
+            <div class="step" id="stepAdv" role="listitem">
+              <div class="step__badge" aria-hidden="true">2</div>
+              <div class="step__meta">
+                <div class="step__title">Advanced layer</div>
+                <div class="step__desc">TDS • pH • Turbidity + charts</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero__right">
+          <div class="verdict" id="verdictCard" data-state="idle" aria-live="polite">
+            <div class="verdict__top">
+              <div class="verdict__label">Overall status</div>
+              <div class="chip" id="chipState">
+                <span class="chip__dot" aria-hidden="true"></span>
+                <span id="chipText">Waiting for input</span>
+              </div>
+            </div>
+
+            <div class="verdict__body">
+              <div class="meter">
+                <div class="meter__bar" aria-hidden="true">
+                  <div class="meter__fill" id="meterFill"></div>
+                </div>
+                <div class="meter__row">
+                  <div class="meter__k">Confidence</div>
+                  <div class="meter__v" id="meterValue">—</div>
+                </div>
+              </div>
+
+              <div class="verdict__headline" id="verdictHeadline">Run pre-analysis to begin</div>
+              <div class="verdict__sub" id="verdictSub">
+                Enter PPI and RI. If screening passes, advanced layer runs automatically.
+              </div>
+            </div>
+
+            <div class="verdict__footer">
+              <div class="mini">
+                <div class="mini__k">Pre-analysis</div>
+                <div class="mini__v" id="miniPre">Pending</div>
+              </div>
+              <div class="mini">
+                <div class="mini__k">Advanced layer</div>
+                <div class="mini__v" id="miniAdv">Locked</div>
+              </div>
+              <div class="mini">
+                <div class="mini__k">Final verdict</div>
+                <div class="mini__v" id="miniFinal">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="note">
+            <div class="note__icon" aria-hidden="true">i</div>
+            <div class="note__text">
+              Thresholds are configurable in <code>app.js</code>. This UI is frontend-only and ready to
+              connect to your backend API later.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <section class="card" aria-label="Pre-analysis layer">
+          <div class="card__head">
+            <div>
+              <div class="card__title">Pre-analysis layer</div>
+              <div class="card__subtitle">Fast screening using PPI &amp; RI</div>
+            </div>
+            <div class="badge badge--soft" id="preBadge">Not evaluated</div>
+          </div>
+
+          <form class="form" id="preForm">
+            <div class="row row--2">
+              <label class="field">
+                <span class="field__label">PPI</span>
+                <span class="field__control">
+                  <input
+                    class="input"
+                    id="ppi"
+                    name="ppi"
+                    inputmode="decimal"
+                    placeholder="e.g. 0.76"
+                    autocomplete="off"
+                    required
+                  />
+                </span>
+                <span class="field__hint" id="ppiHint">Accepted range depends on calibration.</span>
+              </label>
+
+              <label class="field">
+                <span class="field__label">RI</span>
+                <span class="field__control">
+                  <input
+                    class="input"
+                    id="ri"
+                    name="ri"
+                    inputmode="decimal"
+                    placeholder="e.g. 1.33"
+                    autocomplete="off"
+                    required
+                  />
+                </span>
+                <span class="field__hint" id="riHint">Typical RI of water is ~1.333.</span>
+              </label>
+            </div>
+
+            <div class="row row--actions">
+              <button class="btn btn--primary" id="btnRunPre" type="submit">Run pre-analysis</button>
+              <button class="btn btn--ghost" id="btnSkipToAdv" type="button" disabled>
+                Advanced layer locked
+              </button>
+            </div>
+
+            <div class="result" id="preResult" aria-live="polite"></div>
+          </form>
+        </section>
+
+        <section class="card card--disabled" id="advCard" aria-label="Advanced layer">
+          <div class="card__head">
+            <div>
+              <div class="card__title">Advanced layer</div>
+              <div class="card__subtitle">TDS, pH, Turbidity + trend charts</div>
+            </div>
+            <div class="badge badge--soft" id="advBadge">Locked</div>
+          </div>
+
+          <div class="adv">
+            <div class="row row--2">
+              <div class="metric" id="metricTds">
+                <div class="metric__k">TDS</div>
+                <div class="metric__v"><span id="tdsVal">—</span> <span class="metric__u">ppm</span></div>
+                <div class="metric__s" id="tdsStatus">Awaiting test</div>
+              </div>
+              <div class="metric" id="metricPh">
+                <div class="metric__k">pH</div>
+                <div class="metric__v"><span id="phVal">—</span></div>
+                <div class="metric__s" id="phStatus">Awaiting test</div>
+              </div>
+              <div class="metric" id="metricTurb">
+                <div class="metric__k">Turbidity</div>
+                <div class="metric__v"><span id="turbVal">—</span> <span class="metric__u">NTU</span></div>
+                <div class="metric__s" id="turbStatus">Awaiting test</div>
+              </div>
+              <div class="metric metric--wide" id="metricDecision">
+                <div class="metric__k">Decision</div>
+                <div class="metric__v" id="decisionVal">—</div>
+                <div class="metric__s" id="decisionSub">Run the advanced layer to see final verdict.</div>
+              </div>
+            </div>
+
+            <div class="row row--actions">
+              <button class="btn btn--primary" id="btnRunAdv" type="button" disabled>
+                Run advanced layer
+              </button>
+              <button class="btn btn--ghost" id="btnSimulateStream" type="button" disabled>
+                Stream (15s)
+              </button>
+            </div>
+
+            <div class="charts">
+              <div class="chart">
+                <div class="chart__head">
+                  <div class="chart__title">TDS trend</div>
+                  <div class="chart__meta"><span class="dot dot--a"></span> ppm</div>
+                </div>
+                <canvas id="chartTds" height="140"></canvas>
+              </div>
+              <div class="chart">
+                <div class="chart__head">
+                  <div class="chart__title">pH trend</div>
+                  <div class="chart__meta"><span class="dot dot--b"></span> pH</div>
+                </div>
+                <canvas id="chartPh" height="140"></canvas>
+              </div>
+              <div class="chart">
+                <div class="chart__head">
+                  <div class="chart__title">Turbidity trend</div>
+                  <div class="chart__meta"><span class="dot dot--c"></span> NTU</div>
+                </div>
+                <canvas id="chartTurb" height="140"></canvas>
+              </div>
+            </div>
+
+            <div class="result result--muted" id="advResult" aria-live="polite">
+              Advanced layer is locked until pre-analysis passes.
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <footer class="footer">
+        <div class="footer__left">
+          <span class="footer__muted">Frontend:</span> HTML • CSS • JS
+          <span class="sep" aria-hidden="true">•</span>
+          <span class="footer__muted">Charts:</span> Chart.js (CDN)
+        </div>
+        <div class="footer__right">
+          <span class="footer__muted">API:</span> <code id="apiBaseLabel">demo mode</code>
+        </div>
+      </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

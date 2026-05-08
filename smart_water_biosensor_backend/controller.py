@@ -95,3 +95,30 @@ def advanced_report():
 
     result = WaterService.advanced_report(data)
     return jsonify(result)
+
+@water_bp.route("/latest", methods=["GET"])
+def latest():
+    """
+    Get Latest Raw Sensor Row
+    ---
+    tags:
+      - Water Sensor
+    responses:
+      200:
+        description: Latest raw sensor row
+      404:
+        description: No data available
+    """
+    data = WaterRepo.get_latest()
+    if not data:
+        return jsonify({"error": "No data available"}), 404
+
+    ph, ri, tds, turbidity, water_level, created_at = data
+    return jsonify({
+        "ph": ph,
+        "ri": ri,
+        "tds": tds,
+        "turbidity": turbidity,
+        "water_level": water_level,
+        "timestamp": created_at,
+    })
