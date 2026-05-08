@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About • Biosensor Water Quality</title>
+    <meta
+      name="description"
+      content="About the biosensor pipeline: pre-analysis heat signature + RI screening, feature extraction, advanced tests (TDS, pH, turbidity), and final decisioning."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <div class="bg">
+      <div class="bg__grid"></div>
+      <div class="bg__glow bg__glow--a"></div>
+      <div class="bg__glow bg__glow--b"></div>
+    </div>
+
+    <header class="topbar">
+      <div class="container topbar__inner">
+        <div class="brand">
+          <div class="brand__mark" aria-hidden="true">
+            <span class="brand__drop"></span>
+            <span class="brand__ring"></span>
+          </div>
+          <div class="brand__text">
+            <div class="brand__title">Biosensor Water Quality</div>
+            <div class="brand__subtitle">2-layer detection • visual dashboard</div>
+          </div>
+        </div>
+
+        <nav class="nav" aria-label="Primary">
+          <a class="nav__link" href="./index.html">Dashboard</a>
+          <a class="nav__link nav__link--active" href="./about.html">About</a>
+        </nav>
+
+        <div class="topbar__actions">
+          <a class="btn btn--primary" href="./index.html">Open dashboard</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="container main">
+      <section class="card" aria-label="About this biosensor pipeline">
+        <div class="card__head">
+          <div>
+            <div class="card__title">About</div>
+            <div class="card__subtitle">What each stage does (short + practical)</div>
+          </div>
+          <div class="badge badge--soft">Pre-analysis → Advanced layer</div>
+        </div>
+
+        <div class="row" style="margin-top: 14px">
+          <div style="flex: 1 1 520px">
+            <div class="result result--muted" style="margin-top: 0">
+              The image below is a <b>heat signature</b> view from the biosensor <b>pre-analysis</b> stage. It’s used
+              as a fast screening signal before running slower / costlier tests.
+            </div>
+
+            <div class="row" style="margin-top: 12px">
+              <div class="metric" style="flex: 1 1 340px">
+                <div class="metric__k">Stage 1</div>
+                <div class="metric__v" style="font-size: 18px">Signal acquisition</div>
+                <div class="metric__s">
+                  Capture raw sensor output (optical/electrical). Store a timestamped frame or reading batch.
+                </div>
+              </div>
+              <div class="metric" style="flex: 1 1 340px">
+                <div class="metric__k">Stage 2</div>
+                <div class="metric__v" style="font-size: 18px">Pre-analysis screening</div>
+                <div class="metric__s">
+                  Quick checks like <b>RI</b> + a derived index (e.g., PPI) to decide if advanced testing should run.
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="metric" style="flex: 1 1 340px">
+                <div class="metric__k">Stage 3</div>
+                <div class="metric__v" style="font-size: 18px">Feature extraction</div>
+                <div class="metric__s">
+                  Convert raw signatures into stable numbers: baseline removal, smoothing, peak/area metrics, and
+                  normalization.
+                </div>
+              </div>
+              <div class="metric" style="flex: 1 1 340px">
+                <div class="metric__k">Stage 4</div>
+                <div class="metric__v" style="font-size: 18px">Advanced tests</div>
+                <div class="metric__s">
+                  Pull <b>TDS</b>, <b>pH</b>, <b>Turbidity</b> (and optionally water level) and track trends over time.
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="metric metric--wide">
+                <div class="metric__k">Stage 5</div>
+                <div class="metric__v" style="font-size: 18px">Decision & logging</div>
+                <div class="metric__s">
+                  Apply thresholds / rules to output <b>Drinkable</b> or <b>Non‑drinkable</b>. Save readings for audit,
+                  alerts, and calibration improvement.
+                </div>
+              </div>
+            </div>
+
+            <div class="note" style="margin-top: 12px">
+              <div class="note__icon" aria-hidden="true">i</div>
+              <div class="note__text">
+                On the dashboard, “realtime sample” can be pulled from the backend at
+                <code>/water/report/advanced</code> (and a new row can be generated via <code>/water/generate</code>).
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: 1 1 420px">
+            <div class="chart" aria-label="Heat signature image">
+              <div class="chart__head">
+                <div class="chart__title">Heat signatures (pre-analysis)</div>
+                <div class="chart__meta">example frame</div>
+              </div>
+              <img
+                src="./assets/heatmap-preanalysis.png"
+                alt="Heat signature of biosensor pre-analysis stage"
+                style="
+                  width: 100%;
+                  height: auto;
+                  border-radius: 14px;
+                  border: 1px solid rgba(255, 255, 255, 0.1);
+                  background: rgba(0, 0, 0, 0.2);
+                "
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+
