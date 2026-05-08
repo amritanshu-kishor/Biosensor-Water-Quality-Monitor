@@ -44,6 +44,7 @@ def api_index():
             "endpoints": [
                 "/water/generate",
                 "/water/latest",
+                "/water/trend",
                 "/water/report/basic",
                 "/water/report/advanced",
             ],

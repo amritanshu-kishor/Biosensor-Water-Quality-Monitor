@@ -74,6 +74,11 @@ let state = {
 };
 
 let charts = null;
+const chartScaleConfig = {
+  tds: { floor: 0, minRange: 60, padRatio: 0.15 },
+  ph: { floor: 0, minRange: 0.8, padRatio: 0.2 },
+  turb: { floor: 0, minRange: 1.2, padRatio: 0.2 },
+};
 
 function getApiBase() {
   const q = new URLSearchParams(window.location.search);
@@ -217,17 +222,10 @@ function ensureCharts() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      tension: 0.35,
       animation: { duration: 350 },
       interaction: { intersect: false, mode: "index" },
       plugins: {
         legend: { display: false },
-        decimation: {
-          enabled: true,
-          algorithm: "lttb",
-          samples: 40,
-          threshold: 80,
-        },
         tooltip: {
           backgroundColor: "rgba(7,10,18,.88)",
           borderColor: "rgba(255,255,255,.10)",
@@ -260,9 +258,16 @@ function ensureCharts() {
           {
             data: [],
             borderColor: color,
-            pointRadius: 0,
+            pointRadius: 1.8,
+            pointHoverRadius: 3,
+            pointHitRadius: 10,
             borderWidth: 2,
-            fill: true,
+            tension: 0.35,
+            spanGaps: true,
+            showLine: true,
+            pointBackgroundColor: color,
+            pointBorderColor: color,
+            fill: false,
             backgroundColor: gradient(ctx, color),
           },
         ],
@@ -287,13 +292,46 @@ function gradient(ctx, color) {
 }
 
 function pushChartPoint(chart, label, value) {
+  if (!Number.isFinite(value)) return;
   chart.data.labels.push(label);
   chart.data.datasets[0].data.push(value);
   while (chart.data.labels.length > CONFIG.charts.maxPoints) {
     chart.data.labels.shift();
     chart.data.datasets[0].data.shift();
   }
-  chart.update("none");
+}
+
+function autoscaleY(chart, { floor = 0, minRange = 1, padRatio = 0.15 } = {}) {
+  const vals = chart.data.datasets[0].data.filter((v) => Number.isFinite(v));
+  if (!vals.length) return;
+
+  const rawMin = Math.min(...vals);
+  const rawMax = Math.max(...vals);
+  const center = (rawMin + rawMax) / 2;
+  const range = Math.max(rawMax - rawMin, minRange);
+  const pad = range * padRatio;
+
+  let min = center - range / 2 - pad;
+  let max = center + range / 2 + pad;
+  if (Number.isFinite(floor)) min = Math.max(floor, min);
+  if (max <= min) max = min + minRange;
+
+  chart.options.scales.y.min = Number(min.toFixed(2));
+  chart.options.scales.y.max = Number(max.toFixed(2));
+}
+
+function updateCharts(chartGroup, mode = "none") {
+  autoscaleY(chartGroup.tds, chartScaleConfig.tds);
+  autoscaleY(chartGroup.ph, chartScaleConfig.ph);
+  autoscaleY(chartGroup.turb, chartScaleConfig.turb);
+  chartGroup.tds.update(mode);
+  chartGroup.ph.update(mode);
+  chartGroup.turb.update(mode);
+}
+
+function clearChartData(chart) {
+  chart.data.labels = [];
+  chart.data.datasets[0].data = [];
 }
 
 function nowLabel() {
@@ -350,6 +388,17 @@ async function fetchLatestReadingFromBackend() {
   };
 }
 
+async function fetchTrendReadingsFromBackend(limit = 20) {
+  const out = await apiGet(`/water/trend?limit=${encodeURIComponent(String(limit))}`);
+  const points = Array.isArray(out?.points) ? out.points : [];
+  return points.map((p) => ({
+    tds: Number(p.tds),
+    ph: Number(p.ph),
+    turbidity: Number(p.turbidity),
+    timestamp: String(p.timestamp ?? new Date().toISOString()),
+  }));
+}
+
 function randNormal(mean, sd, min, max) {
   // Box-Muller transform
   let u = 0,
@@ -379,10 +428,46 @@ async function runAdvancedOnce() {
   const evald = evaluateAdvanced(reading);
 
   const c = ensureCharts();
-  const label = nowLabel();
-  pushChartPoint(c.tds, label, reading.tds);
-  pushChartPoint(c.ph, label, reading.ph);
-  pushChartPoint(c.turb, label, reading.turbidity);
+  // "Run advanced layer" should show the latest test only.
+  // Continuous history is reserved for the dedicated stream button.
+  clearChartData(c.tds);
+  clearChartData(c.ph);
+  clearChartData(c.turb);
+
+  let plotted = false;
+  if (state.api.enabled) {
+    try {
+      const trend = await fetchTrendReadingsFromBackend(24);
+      for (const p of trend) {
+        const label = p.timestamp ? new Date(p.timestamp).toLocaleTimeString() : nowLabel();
+        const before = c.tds.data.datasets[0].data.length;
+        pushChartPoint(c.tds, label, p.tds);
+        pushChartPoint(c.ph, label, p.ph);
+        pushChartPoint(c.turb, label, p.turbidity);
+        if (c.tds.data.datasets[0].data.length > before) plotted = true;
+      }
+    } catch (e) {
+      // If trend endpoint is unavailable, fall back to plotting the latest point.
+    }
+  }
+
+  if (!plotted) {
+    const label = nowLabel();
+    const before = c.tds.data.datasets[0].data.length;
+    pushChartPoint(c.tds, label, reading.tds);
+    pushChartPoint(c.ph, label, reading.ph);
+    pushChartPoint(c.turb, label, reading.turbidity);
+    plotted = c.tds.data.datasets[0].data.length > before;
+  }
+
+  if (!plotted) {
+    setResult(
+      els.advResult,
+      "result--bad",
+      "No valid chart data returned from backend. Check /water/latest and /water/trend values."
+    );
+  }
+  updateCharts(c, "none");
 
   formatReading(reading);
 
@@ -492,6 +577,8 @@ async function simulateStream(msTotal = 15000, interval = 1000) {
       pushChartPoint(c.ph, p.label, p.ph);
       pushChartPoint(c.turb, p.label, p.turbidity);
     }
+
+    updateCharts(c, "none");
   };
 
   while (Date.now() - started < msTotal) {
@@ -666,11 +753,8 @@ els.btnRealtimeSample?.addEventListener("click", async () => {
   }
 });
 
-// Initial UI
 state.api.base = getApiBase();
-// Enable backend integration when:
-// - served from Flask (same-origin), or
-// - user passes ?api=
+
 state.api.enabled = window.location.protocol !== "file:" || new URLSearchParams(window.location.search).has("api");
 setApiUi();
 
