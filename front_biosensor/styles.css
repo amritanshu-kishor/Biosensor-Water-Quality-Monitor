@@ -471,14 +471,38 @@ code{
 }
 .chart__title{font-weight: 900; letter-spacing:-.01em}
 .chart__meta{color: var(--muted2); font-size: 12px; display:flex; gap:8px; align-items:center}
+.chart__tds_meta{color: var(--muted2); font-size: 12px; display:flex; gap:8px; align-items:center}
 .dot{width:8px; height:8px; border-radius:999px}
 .dot--a{background: var(--a)}
 .dot--b{background: var(--b)}
 .dot--c{background: var(--c)}
 
-.chart canvas{
-  display:block;
+.chart--tds {
+  height: 260px;
+}
+.chart--tds canvas {
+  display: block;
   width: 100% !important;
+  height: 200px !important;
+}
+.chart:not(.chart--tds) {
+  height: 220px;
+}
+.chart:not(.chart--tds) canvas {
+  display: block;
+  width: 100% !important;
+  height: 160px !important;
+}
+
+/* TDS gets a taller canvas so the 100–500 ppm range has room */
+#chartTds {
+  height: 180px !important;
+  max-height: 180px;
+}
+
+/* pH and turbidity keep original height */
+#chartPh,
+#chartTurb {
   height: 160px !important;
   max-height: 160px;
 }
