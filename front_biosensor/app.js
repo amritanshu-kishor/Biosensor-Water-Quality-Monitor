@@ -75,7 +75,8 @@ let state = {
 
 let charts = null;
 const chartScaleConfig = {
-  tds: { floor: 0, minRange: 60, padRatio: 0.15 },
+  // tds: { floor: 0, minRange: 60, padRatio: 0.15 },
+  tds: { floor: null, minRange: 100, padRatio: 0.1 },
   ph: { floor: 0, minRange: 0.8, padRatio: 0.2 },
   turb: { floor: 0, minRange: 1.2, padRatio: 0.2 },
 };
@@ -252,6 +253,7 @@ function ensureCharts() {
     const ctx = $(canvasId).getContext("2d");
     return new Chart(ctx, {
       ...common,
+      options: JSON.parse(JSON.stringify(common.options)),
       data: {
         labels: [],
         datasets: [
@@ -307,26 +309,38 @@ function autoscaleY(chart, { floor = 0, minRange = 1, padRatio = 0.15 } = {}) {
 
   const rawMin = Math.min(...vals);
   const rawMax = Math.max(...vals);
-  const center = (rawMin + rawMax) / 2;
   const range = Math.max(rawMax - rawMin, minRange);
   const pad = range * padRatio;
 
-  let min = center - range / 2 - pad;
-  let max = center + range / 2 + pad;
+  let min = rawMin - pad;
+  let max = rawMax + pad;
+
   if (Number.isFinite(floor)) min = Math.max(floor, min);
   if (max <= min) max = min + minRange;
 
-  chart.options.scales.y.min = Number(min.toFixed(2));
-  chart.options.scales.y.max = Number(max.toFixed(2));
+  chart.options.scales.y.min = Math.floor(min);
+  chart.options.scales.y.max = Math.ceil(max);
+}
+
+function autoscaleYTds(chart) {
+  const vals = chart.data.datasets[0].data.filter((v) => Number.isFinite(v));
+  if (!vals.length) return;
+  const rawMin = Math.min(...vals);
+  const rawMax = Math.max(...vals);
+  const pad = Math.max((rawMax - rawMin) * 0.15, 50);
+  chart.options.scales.y.min = Math.floor(Math.max(0, rawMin - pad));
+  chart.options.scales.y.max = Math.ceil(rawMax + pad);
 }
 
 function updateCharts(chartGroup, mode = "none") {
-  autoscaleY(chartGroup.tds, chartScaleConfig.tds);
+  autoscaleYTds(chartGroup.tds);
   autoscaleY(chartGroup.ph, chartScaleConfig.ph);
   autoscaleY(chartGroup.turb, chartScaleConfig.turb);
-  chartGroup.tds.update(mode);
-  chartGroup.ph.update(mode);
-  chartGroup.turb.update(mode);
+
+  chartGroup.tds.update("none");
+  chartGroup.ph.update();
+  chartGroup.turb.update();
+  console.log("Updating TDS chart:", chartGroup.tds);
 }
 
 function clearChartData(chart) {
@@ -428,6 +442,19 @@ async function runAdvancedOnce() {
   const evald = evaluateAdvanced(reading);
 
   const c = ensureCharts();
+
+  if (!c.tds.data.datasets || c.tds.data.datasets.length === 0) {
+    console.error("TDS dataset missing — reinitializing");
+  
+    c.tds.data.datasets = [
+      {
+        data: [],
+        borderColor: "rgba(93,225,255,1)",
+        pointRadius: 2,
+        tension: 0.35,
+      },
+    ];
+  }
   // "Run advanced layer" should show the latest test only.
   // Continuous history is reserved for the dedicated stream button.
   clearChartData(c.tds);
@@ -441,13 +468,41 @@ async function runAdvancedOnce() {
       for (const p of trend) {
         const label = p.timestamp ? new Date(p.timestamp).toLocaleTimeString() : nowLabel();
         const before = c.tds.data.datasets[0].data.length;
-        pushChartPoint(c.tds, label, p.tds);
+        // pushChartPoint(c.tds, label, p.tds);
+        // pushChartPoint(c.tds, label, parseFloat(p.tds) || 0);
+        const tds = parseFloat(p.tds);
+        pushChartPoint(c.tds, label, tds);
+
+        console.log("TDS dataset:", c.tds.data.datasets); 
+
         pushChartPoint(c.ph, label, p.ph);
         pushChartPoint(c.turb, label, p.turbidity);
         if (c.tds.data.datasets[0].data.length > before) plotted = true;
       }
     } catch (e) {
-      // If trend endpoint is unavailable, fall back to plotting the latest point.
+      console.error("Trend API error:", e);
+    
+      const label = nowLabel();
+    
+      const tds = parseFloat(reading.tds);
+      const ph = parseFloat(reading.ph);
+      const turb = parseFloat(reading.turbidity);
+    
+      if (Number.isFinite(tds)) {
+        pushChartPoint(c.tds, label, tds);
+      } else {
+        console.warn("Invalid TDS in fallback:", reading.tds);
+      }
+    
+      if (Number.isFinite(ph)) {
+        pushChartPoint(c.ph, label, ph);
+      }
+    
+      if (Number.isFinite(turb)) {
+        pushChartPoint(c.turb, label, turb);
+      }
+    
+      plotted = true;
     }
   }
 
@@ -467,8 +522,8 @@ async function runAdvancedOnce() {
       "No valid chart data returned from backend. Check /water/latest and /water/trend values."
     );
   }
-  updateCharts(c, "none");
-
+  // updateCharts(c, "none");
+  updateCharts(c, "active");
   formatReading(reading);
 
   setMetricStatus(
@@ -578,7 +633,8 @@ async function simulateStream(msTotal = 15000, interval = 1000) {
       pushChartPoint(c.turb, p.label, p.turbidity);
     }
 
-    updateCharts(c, "none");
+    // updateCharts(c, "none");
+    updateCharts(c, "active");
   };
 
   while (Date.now() - started < msTotal) {
@@ -753,8 +809,11 @@ els.btnRealtimeSample?.addEventListener("click", async () => {
   }
 });
 
+// Initial UI
 state.api.base = getApiBase();
-
+// Enable backend integration when:
+// - served from Flask (same-origin), or
+// - user passes ?api=
 state.api.enabled = window.location.protocol !== "file:" || new URLSearchParams(window.location.search).has("api");
 setApiUi();
 
