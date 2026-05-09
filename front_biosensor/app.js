@@ -278,9 +278,9 @@ function ensureCharts() {
   };
 
   charts = {
-    tds: mk("chartTds", "rgba(93,225,255,1)"),
-    ph: mk("chartPh", "rgba(166,139,255,1)"),
-    turb: mk("chartTurb", "rgba(255,139,212,1)"),
+    tds: mk("chartTds", "rgba(56,189,248,1)"),
+    ph: mk("chartPh", "rgba(45,212,191,1)"),
+    turb: mk("chartTurb", "rgba(252,211,77,1)"),
   };
 
   return charts;
@@ -449,7 +449,7 @@ async function runAdvancedOnce() {
     c.tds.data.datasets = [
       {
         data: [],
-        borderColor: "rgba(93,225,255,1)",
+        borderColor: "rgba(56,189,248,1)",
         pointRadius: 2,
         tension: 0.35,
       },
